@@ -1,0 +1,49 @@
+
+for i, v in pairs(debug.getupvalue(require(game:GetService("ReplicatedStorage").Fsys).load("RouterClient").init, 4)) do
+    v.Name = i
+end
+for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
+  v:Disable()
+end
+
+function CheckPets()
+    _G.DesertPets = 1
+    for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
+        if v.id:match("desert") and not v.id:match("egg") then        
+            _G.DesertPets = _G.DesertPets + 1
+        end
+    end
+    return _G.DesertPets
+end
+
+-- Accept Trade
+spawn(function()
+    while true and wait(1) do
+        for i, v in pairs(game.Players:GetChildren()) do
+            game:GetService("ReplicatedStorage").API["TradeAPI/AcceptOrDeclineTradeRequest"]:InvokeServer(v, true)
+        end
+    end
+end)
+
+
+function AddPetsReload()
+    while not game:GetService("Players").LocalPlayer.PlayerGui.TradeApp.Frame.Visible do
+        wait(1)
+    end
+
+
+    for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
+        if v.id:match("desert") and not v.id:match("egg") then        
+            game:GetService("ReplicatedStorage"):WaitForChild("API"):FindFirstChild("TradeAPI/AddItemToOffer"):FireServer(v.unique)
+        end
+    end
+
+    while game:GetService("Players").LocalPlayer.PlayerGui.TradeApp.Frame.Visible do
+        game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("TradeAPI/AcceptNegotiation"):FireServer()
+        wait(0.1)
+        game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("TradeAPI/ConfirmTrade"):FireServer()
+        wait(0.1)
+    end
+
+    AddPetsReload()
+end
