@@ -197,7 +197,7 @@ while true do
             print(`No {config.targetEgg}(s) exist.`)
 
             while Player do
-                joinGame() task.wait(5)
+                pcall(joinGame) task.wait(5)
             end
 		end
 	else
