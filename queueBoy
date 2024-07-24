@@ -1,0 +1,209 @@
+getgenv().config = {
+    autoEgg = true,
+    targetEgg = "Arcade Egg 5",
+    stayWorld1 = true,
+    serverBlacklist = false
+}
+
+repeat task.wait() until game:IsLoaded()
+repeat task.wait() until game.PlaceId ~= nil
+repeat task.wait() until game:GetService("Players").LocalPlayer
+local Player = game.Players.LocalPlayer
+repeat task.wait() until not game.Players.LocalPlayer.PlayerGui:FindFirstChild("__INTRO")
+local HRP = Player.Character.HumanoidRootPart
+local RepStor = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Library = require(RepStor.Library)
+local saveMod = require(RepStor.Library.Client.Save)
+repeat task.wait() until Library.Loaded
+local Active = workspace.__THINGS.__INSTANCE_CONTAINER.Active
+local xRange = {min = 183, max = 212, def = 164}
+local zRange = {min = -1947, max = -1918, def = -1967}
+
+local MachineCmds = require(game.ReplicatedStorage.Library.Client.InstancingCmds)
+function Enter(Name)
+    spawn(function()
+        setthreadidentity(2)
+        pcall(function() 
+            MachineCmds.Enter(Name)
+        end)
+        setthreadidentity(7)
+    end)
+end
+
+setfpscap(20)
+
+function floorVector3(v3) return Vector3.new(math.floor(v3.X), math.floor(v3.Y), math.floor(v3.Z)) end
+function sendNotif(url, msg) request({Url = url,Method = "POST",Headers = {["Content-Type"] = "application/json"},Body = HttpService:JSONEncode({content = msg})}) end
+function getItemInfo(class, itemName, info)
+    if saveMod.Get()["Inventory"][class] then -- just add this check so it doesn't iterate over nil
+        for i,v in saveMod.Get()["Inventory"][class] do
+            if v.id == itemName then
+                if info == "uid" then
+                    return i
+                else
+                    return v[info]
+                end
+            end
+        end
+    end -- and this end to end the check ofc
+end
+
+local targetEggUID = getItemInfo("Lootbox", config.targetEgg, "uid")
+local targetEggAmount = getItemInfo("Lootbox", config.targetEgg, "_am") or 0
+local arcadeTokenAmount = getItemInfo("Misc", "Arcade Token", "_am") or 0
+
+print("Current Targted Eggs :", targetEggAmount)
+print("Current Arcade Tokens :", arcadeTokenAmount)
+
+
+function FetchServer()
+    local JobIDs = {};
+    repeat task.wait()
+        local API = game:GetService("HttpService"):JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100".. (ServerPages and "&cursor=".. ServerPages or "")));
+        for i, v in next, API["data"] do
+            if v["id"] ~= game.JobId and v["playing"] ~= v["maxPlayers"] then
+                table.insert(JobIDs, v["id"]);
+            end;
+        end;
+        ServerPages = API.nextPageCursor;
+    until #JobIDs >= 400;
+    return JobIDs[math.random(1, #JobIDs)] 
+end;
+
+function serverCheck()
+    if not isfile("blackListServers") then
+        writefile("blackListServers", "")
+    end
+
+    local orgString = readfile("blackListServers")
+    local t = {}
+    for line in orgString:gmatch("[^\r\n]+") do
+        table.insert(t, line)
+    end
+    local newString = orgString .. game.JobId .. "\n"
+    
+    writefile("blackListServers", newString)
+    return t
+end
+
+local startTime = os.time() ; local placeIds = {[8737899170] = 16498369169, [16498369169] = 8737899170}
+local failedTeleport = false game:GetService("TeleportService").TeleportInitFailed:Connect(function() failedTeleport = true print("Set failTP to true") end)
+FailedTPCount = 0
+local function joinGame()
+    print("Attempting to TP")
+    
+    serverId = FetchServer()
+    if config.serverBlacklist then
+        oldServs = serverCheck()
+        checkA = true
+        
+        while checkA and task.wait(0.1) do
+            oldFound = false
+            for i, v in pairs(oldServs) do
+                if v == serverId then
+                    print("Old Server Found, fetching again..")
+                    oldFound = true
+                    break
+                end
+            end
+            if oldFound then
+                serverId = FetchServer()
+            elseif not oldFound then
+                checkA = false
+                break
+            end
+        end
+    end
+
+    if os.time() - startTime <= 15 then
+        repeat task.wait(1) until os.time() - startTime >= 15
+    end
+
+    pcall(function()
+        game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, serverId, game.Players.LocalPlayer)
+    end)
+
+    print("Waiting for Fail") ; local startWait = os.time()
+    repeat task.wait(2) until failedTeleport or os.time() - startWait >= 3
+    warn("Failed Teleport, Retrying") failedTeleport = false
+    FailedTPCount = FailedTPCount + 1
+    if FailedTPCount == 5 then
+        game:Shutdown()
+    end
+end
+
+task.spawn(function()
+    while task.wait(15) do
+        if Active:FindFirstChild("StairwayToHeaven") or (os.time() - startTime >= 180) then
+            joinGame()
+        end
+    end
+end)
+
+while true do 
+    print("Looping...")
+    if Active:FindFirstChild("ClawMachine") then
+        print("In ClawMachine Area")
+		local clawHolder = Active.ClawMachine.Claws.Claw.Holder
+		local targetEgg = Active.ClawMachine.Items:FindFirstChild(config.targetEgg)
+        if targetEgg then
+			local eggPos = Vector2.new(math.floor(targetEgg:GetPivot().X), math.floor(targetEgg:GetPivot().Z))
+
+            if eggPos.X < xRange.min and eggPos.Y < zRange.min
+			or eggPos.Y < zRange.min and eggPos.X < xRange.min
+			or eggPos.X > xRange.max or eggPos.Y > zRange.max
+			or eggPos.X < xRange.def or eggPos.Y < zRange.def then
+				print(`bad egg die in fire`) targetEgg:Destroy()
+			else
+				print(`{targetEgg.Name} | {eggPos} : is Good`)
+
+                repeat task.wait() until math.abs(clawHolder.Position.X - xRange.def) <= 3 and math.abs(clawHolder.Position.Z - zRange.def) <= 5 or not Active:FindFirstChild("ClawMachine")
+
+                if Player.PlayerGui._INSTANCES.ClawMachine.Enabled then
+                    print(`PlayerGui Enabled`)
+					if clawHolder.Position.X < eggPos.X then
+						print(`{floorVector3(clawHolder.Position)} | {eggPos} : Need to move Claw Forward`)
+						Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Direction", "Forward")
+						repeat task.wait(.01) until math.floor(clawHolder.Position.X) >= eggPos.X or not Player.PlayerGui._INSTANCES.ClawMachine.Enabled
+						Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Direction")
+					end
+
+					if clawHolder.Position.Z < eggPos.Y then
+						print(`{floorVector3(clawHolder.Position)} | {eggPos} : Need to move Claw to the Right`)
+						Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Direction", "Right")
+						repeat task.wait(.01) until math.floor(clawHolder.Position.Z) >= eggPos.Y or not Player.PlayerGui._INSTANCES.ClawMachine.Enabled
+						Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Direction")
+					end
+
+					task.wait(1) Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Go") print("Resetting")
+
+                    repeat 
+                        task.wait(2.5) 
+                        print("Waiting for Reset") 
+                        Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Go")
+                    until math.abs(clawHolder.Position.X - xRange.def) <= 3 and math.abs(clawHolder.Position.Z - zRange.def) <= 5 or not Active:FindFirstChild("ClawMachine")
+
+                    startTimeC = os.time()
+                    if math.abs(targetEgg:GetPivot().X - xRange.def) <= 3 then
+                        repeat task.wait() until targetEgg.Parent == nil or (os.time() - startTimeC >= 60) print(`Finished Getting {targetEgg.Name}`)
+                    end
+				else
+                    Library.Network.Fire("Instancing_FireCustomFromClient", "ClawMachine", "Claw: Request Play") task.wait(1)
+				end
+			end
+		else
+            print(`No {config.targetEgg}(s) exist.`)
+
+            while Player do
+                joinGame() task.wait(5)
+            end
+		end
+	else
+        Enter("ClawMachine")
+        local startAttempt = os.time()
+        repeat task.wait(.1) until (Active:FindFirstChild("ClawMachine") and #Active.ClawMachine:FindFirstChild("Items"):GetChildren() >= 49) or (os.time() - startAttempt >= 3)
+        print("Entered Area")
+	end
+end
