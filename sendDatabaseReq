@@ -91,7 +91,14 @@ spawn(function()
         passA = false
     end
 
-    while passA and task.wait() do
+    game:GetService("CoreGui"):WaitForChild("RobloxPromptGui", math.huge).promptOverlay.ChildAdded:Connect(function(Child)
+        if Child.Name ~= "ErrorPrompt" then
+            return
+        end
+        getgenv().Disconnected = true
+    end)
+
+    while passA and task.wait() and not getgenv().Disconnected do
         pcall(function()
             body["filter"]["username"] = game.Players.LocalPlayer.Name
             body["update"]["$set"]["stats"]["aging_potion"] = tostring((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)())
