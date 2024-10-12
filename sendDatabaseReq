@@ -26,7 +26,6 @@ spawn(function()
             local isNeon = v.properties and v.properties.neon
             local isMega = v.properties and v.properties.mega_neon
             local petKey = isNeon and ("neon_" .. v.id) or isMega and ("mega_" .. v.id) or v.id
-            print(petKey)
             petsTable[petKey] = (petsTable[petKey] or 0) + 1
         end
 
