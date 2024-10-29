@@ -1,3 +1,4 @@
+-- Database Code
 spawn(function()   
     local function CheckPetRarity(PetName)
         for _, entry in pairs(require(game:GetService("ReplicatedStorage").ClientDB.Inventory.InventoryDB).pets) do
@@ -103,6 +104,7 @@ spawn(function()
             body["update"]["$set"]["stats"]["aging_potion"] = tostring((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)())
             body["update"]["$set"]["stats"]["bucks"] = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("BucksIndicatorApp").CurrencyIndicator.Container.Amount.Text
             body["update"]["$set"]["stats"]["event_currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
+            body["update"]["$set"]["stats"]["purple_pumpkins"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name]["halloween_2024_purple_pumpkins"]["purple_pumpkins"] or 0)
             body["update"]["$set"]["stats"]["pets"] = getInventoryInfo("pets")
             body["update"]["$set"]["last_updated"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
 
