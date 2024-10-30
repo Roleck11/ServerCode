@@ -1,120 +1,139 @@
--- Database Code
-spawn(function()   
-    local function CheckPetRarity(PetName)
-        for _, entry in pairs(require(game:GetService("ReplicatedStorage").ClientDB.Inventory.InventoryDB).pets) do
-            if type(entry) == "table" and string.lower(entry.name) == string.lower(PetName) then
-                if entry.rarity == "common" then
-                    return "Common"
-                elseif entry.rarity == "uncommon" then 
-                    return "Uncommon"
-                elseif entry.rarity == "rare" then 
-                    return "Rare"
-                elseif entry.rarity == "ultra_rare" then 
-                    return "Ultra Rare"
-                elseif entry.rarity == "legendary" then 
-                    return "Legendary"
-                end
-            end
-        end
-    end
+spawn(function()
+------------------------------
 
-    local function getInventoryInfo(tab)
-        local petsTable = {}
-        local allInventory = {}
-
-        for _, v in pairs(require(game.ReplicatedStorage:WaitForChild("Fsys", 600)).load("ClientData").get_data()[game.Players.LocalPlayer.Name].inventory[tab]) do
-            if v.id == "practice_dog" then continue end
-            local isNeon = v.properties and v.properties.neon
-            local isMega = v.properties and v.properties.mega_neon
-            local petKey = isNeon and ("neon_" .. v.id) or isMega and ("mega_" .. v.id) or v.id
-            petsTable[petKey] = (petsTable[petKey] or 0) + 1
-        end
-
-        for petKey, count in pairs(petsTable) do
-            local isNeon = petKey:sub(1,5) == "neon_"
-            local isMega = petKey:sub(1,5) == "mega_"
-            local petId = isNeon and petKey:sub(6) or isMega and petKey:sub(6) or petKey
-            local petInfo = nil
-    
-            for _, petData in pairs(require(game.ReplicatedStorage:WaitForChild("Fsys", 600)).load("InventoryDB")["pets"]) do
-                if petId == tostring(petData.id) then
-                    petInfo = petData
-                    break
-                end
-            end
-    
-            if petInfo then
-                local petName = isNeon and ("Neon " .. petInfo.name) or isMega and ("Mega " .. petInfo.name) or petInfo.name
-                local petRarity = CheckPetRarity(petInfo.name)
-                table.insert(allInventory, (count .. "x " .. petName) .. " - " .. petRarity)
-            end
-        end
-        local rarityOrder = {
-            ["Legendary"] = 1,
-            ["Ultra Rare"] = 2,
-            ["Rare"] = 3,
-            ["Uncommon"] = 4,
-            ["Common"] = 5
-        }
-    
-        table.sort(allInventory, function(a, b)
-            local aRarity = a:match("%- (.+)$")
-            local bRarity = b:match("%- (.+)$")
-            return (rarityOrder[aRarity] or 6) < (rarityOrder[bRarity] or 6)
-        end)
-        return allInventory
-    end
-
-    local headers = {
-        ["Content-Type"] = "application/json",
-        ["Access-Control-Request-Headers"] = "*",
-        ["api-key"] = "Gu2DvaZp4Fg1OU3NeyIx8AiUoVv1eiMTSEJh1u47G7UpD93RTlagBUrnks5VZAYm",
+if not getgenv().DatabaseClientConfig then
+    getgenv().DatabaseClientConfig = {
+        ["Debug Prints"] = false,
+        ["API Username"] = "Other"
     }
-    
-    local body = {
-        ["dataSource"] = "Cluster0",
-        ["database"] = "test",
-        ["collection"] = "idk",
-        ["filter"] = {},
-        ["update"] = {
-            ["$set"] = {
-                ["stats"] = {}
-            }
-        },
-        ["upsert"] = true
-    }
+end
 
-    lower_user = game.Players.LocalPlayer.Name:lower()
-    if lower_user:match("monsterocean") or lower_user:match("beastocean") or lower_user:match("alienocean") or lower_user:match("jumboocean") or lower_user:match("farmergrindam") then
-        passA = true
-    else
-        passA = false
+print("== hello there.. ==")
+
+mainUrl =  "http://99.231.109.60:7991/"
+
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Player = game.Players.LocalPlayer
+local Fsys = require(ReplicatedStorage:WaitForChild("Fsys", 600)).load
+
+function formatNumber(number)
+    number = math.floor(number)
+    local str = tostring(number)
+    local formatted = ""
+    local count = 0
+
+    for i = #str, 1, -1 do
+        count = count + 1
+        formatted = str:sub(i, i) .. formatted
+        if count % 3 == 0 and i ~= 1 then
+            formatted = "," .. formatted
+        end
     end
 
-    game:GetService("CoreGui"):WaitForChild("RobloxPromptGui", math.huge).promptOverlay.ChildAdded:Connect(function(Child)
-        if Child.Name ~= "ErrorPrompt" then
-            return
+    return formatted
+end
+
+function CheckPetRarity(PetName)
+    for _, entry in pairs(require(game:GetService("ReplicatedStorage").ClientDB.Inventory.InventoryDB).pets) do
+        if type(entry) == "table" and string.lower(entry.name) == string.lower(PetName) then
+            if entry.rarity == "common" then
+                return "Common"
+            elseif entry.rarity == "uncommon" then 
+                return "Uncommon"
+            elseif entry.rarity == "rare" then 
+                return "Rare"
+            elseif entry.rarity == "ultra_rare" then 
+                return "Ultra Rare"
+            elseif entry.rarity == "legendary" then 
+                return "Legendary"
+            end
         end
-        getgenv().Disconnected = true
+    end
+end
+
+function getInventoryInfo(tab)
+    local petsTable = {}
+    local allInventory = {}
+
+    for _, v in pairs(require(game.ReplicatedStorage:WaitForChild("Fsys", 600)).load("ClientData").get_data()[game.Players.LocalPlayer.Name].inventory[tab]) do
+        if v.id == "practice_dog" then continue end
+        local isNeon = v.properties and v.properties.neon
+        local isMega = v.properties and v.properties.mega_neon
+        local petKey = isNeon and ("neon_" .. v.id) or isMega and ("mega_" .. v.id) or v.id
+        petsTable[petKey] = (petsTable[petKey] or 0) + 1
+    end
+
+    for petKey, count in pairs(petsTable) do
+        local isNeon = petKey:sub(1,5) == "neon_"
+        local isMega = petKey:sub(1,5) == "mega_"
+        local petId = isNeon and petKey:sub(6) or isMega and petKey:sub(6) or petKey
+        local petInfo = nil
+
+        for _, petData in pairs(require(game.ReplicatedStorage:WaitForChild("Fsys", 600)).load("InventoryDB")["pets"]) do
+            if petId == tostring(petData.id) then
+                petInfo = petData
+                break
+            end
+        end
+
+        if petInfo then
+            local petName = isNeon and ("Neon " .. petInfo.name) or isMega and ("Mega " .. petInfo.name) or petInfo.name
+            local petRarity = CheckPetRarity(petInfo.name)
+            table.insert(allInventory, (count .. "x " .. petName) .. " - " .. petRarity)
+        end
+    end
+    local rarityOrder = {
+        ["Legendary"] = 1,
+        ["Ultra Rare"] = 2,
+        ["Rare"] = 3,
+        ["Uncommon"] = 4,
+        ["Common"] = 5
+    }
+
+    table.sort(allInventory, function(a, b)
+        local aRarity = a:match("%- (.+)$")
+        local bRarity = b:match("%- (.+)$")
+        return (rarityOrder[aRarity] or 6) < (rarityOrder[bRarity] or 6)
     end)
+    return allInventory
+end
 
-    while passA and task.wait() and not getgenv().Disconnected do
-        pcall(function()
-            body["filter"]["username"] = game.Players.LocalPlayer.Name
-            body["update"]["$set"]["stats"]["aging_potion"] = tostring((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)())
-            body["update"]["$set"]["stats"]["bucks"] = game:GetService("Players").LocalPlayer.PlayerGui:WaitForChild("BucksIndicatorApp").CurrencyIndicator.Container.Amount.Text
-            body["update"]["$set"]["stats"]["event_currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
-            body["update"]["$set"]["stats"]["purple_pumpkins"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name]["halloween_2024_purple_pumpkins"]["purple_pumpkins"] or 0)
-            body["update"]["$set"]["stats"]["pets"] = getInventoryInfo("pets")
-            body["update"]["$set"]["last_updated"] = os.date("!%Y-%m-%dT%H:%M:%SZ")
-
-            request({
-                Url = "https://us-east-2.aws.data.mongodb-api.com/app/data-ljriije/endpoint/data/v1/action/updateOne",
-                Method = "POST",
-                Headers = headers,
-                Body = game:GetService("HttpService"):JSONEncode(body)
-            })
-        end)
-        task.wait(300)
+game:GetService("CoreGui"):WaitForChild("RobloxPromptGui", math.huge).promptOverlay.ChildAdded:Connect(function(Child)
+    if Child.Name ~= "ErrorPrompt" then
+        return
     end
+    getgenv().Disconnected = true
+end)
+
+startTime = os.time()
+
+while task.wait() do
+
+        local Data = {
+            [game.Players.LocalPlayer.Name] = {   
+                ["Time Info"] = {
+                    ["Starting Time"] = startTime,
+                    ["Last Upload"] = os.time()
+                },
+
+                ["Player Info"] = {
+                    ["Aging Potions"] = ((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()),
+                    ["Bucks"] = (Fsys("ClientData").get_data()[Player.Name].money),
+                    ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
+                    ["Purple Pumpkins"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name]["halloween_2024_purple_pumpkins"]["purple_pumpkins"] or 0),
+                    ["apiUser"] = DatabaseClientConfig["API Username"]
+                },
+            }
+        }
+        response = request({Url = mainUrl .. "store_data", Body = game:GetService("HttpService"):JSONEncode(Data), Method = "POST", Headers = {["content-type"] = "application/json", ["ngrok-skip-browser-warning"] = "true"}})
+
+        if response.Success and response.Body ~= "Data processed!" and DatabaseClientConfig["Debug Prints"] then -- send a status code or sm
+            print(response.Body)
+        elseif not response.Success and DatabaseClientConfig["Debug Prints"] then
+            print("Failed to send request: " .. response.StatusCode)
+        end
+
+    task.wait(60)
+end
 end)
