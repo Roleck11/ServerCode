@@ -1,4 +1,3 @@
-spawn(function()
 ------------------------------
 
 if not getgenv().DatabaseClientConfig then
@@ -121,19 +120,17 @@ while task.wait() do
                     ["Aging Potions"] = ((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()),
                     ["Bucks"] = (Fsys("ClientData").get_data()[Player.Name].money),
                     ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
-                    ["Purple Pumpkins"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name]["halloween_2024_purple_pumpkins"]["purple_pumpkins"] or 0),
                     ["apiUser"] = DatabaseClientConfig["API Username"]
                 },
             }
         }
         response = request({Url = mainUrl .. "store_data", Body = game:GetService("HttpService"):JSONEncode(Data), Method = "POST", Headers = {["content-type"] = "application/json", ["ngrok-skip-browser-warning"] = "true"}})
 
-        if response.Success and response.Body ~= "Data processed!" and DatabaseClientConfig["Debug Prints"] then -- send a status code or sm
+        if response.Success and response.Body ~= "Data processed!" and DatabaseClientConfig["Debug Prints"] then
             print(response.Body)
-        elseif not response.Success and DatabaseClientConfig["Debug Prints"] then
+        elseif not response.Success then
             print("Failed to send request: " .. response.StatusCode)
         end
 
     task.wait(60)
 end
-end)
