@@ -99,6 +99,7 @@ function getInventoryInfo(tab)
     return allInventory
 end
 
+getgenv().Disconnected = false
 game:GetService("CoreGui"):WaitForChild("RobloxPromptGui", math.huge).promptOverlay.ChildAdded:Connect(function(Child)
     if Child.Name ~= "ErrorPrompt" then
         return
@@ -108,8 +109,8 @@ end)
 
 startTime = os.time()
 
-while task.wait() do
-
+while task.wait(1) and not getgenv().Disconnected do
+    pcall(function()
         local Data = {
             [game.Players.LocalPlayer.Name] = {   
                 ["Time Info"] = {
@@ -132,8 +133,8 @@ while task.wait() do
         elseif not response.Success then
             print("Failed to send request: " .. response.StatusCode)
         end
-
-    task.wait(60)
+        task.wait(60)
+    end)
 end
 
 end)
