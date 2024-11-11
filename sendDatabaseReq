@@ -10,7 +10,7 @@ end
 
 print("== hello there.. ==")
 
-mainUrl =  "http://99.231.109.60:7991/"
+mainUrl =  "https://amdatabase.vercel.app/"
 
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
