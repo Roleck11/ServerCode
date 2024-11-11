@@ -14,6 +14,7 @@ spawn(function()
     
     local HttpService = game:GetService("HttpService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local RS = game:GetService("ReplicatedStorage")
     local Player = game.Players.LocalPlayer
     local ClientData = require(RS.ClientModules.Core.ClientData)
     local RouterClient = require(RS.ClientModules.Core:WaitForChild("RouterClient"):WaitForChild("RouterClient"))
