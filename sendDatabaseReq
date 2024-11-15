@@ -124,6 +124,8 @@ spawn(function()
                         ["Aging Potions"] = ((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()),
                         ["Bucks"] = (ClientData.get_data()[Player.Name].money or 0),
                         ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
+                        ["New Bucks"] = (getgenv().Stats and getgenv().Stats.Bucks) or 0,
+                        ["New Potions"] = (getgenv().Stats and getgenv().Stats.Potion) or 0,
                         ["apiUser"] = DatabaseClientConfig["API Username"]
                     },
                 }
