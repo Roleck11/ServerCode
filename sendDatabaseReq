@@ -109,14 +109,14 @@ spawn(function()
         getgenv().Disconnected = true
     end)
     
-    startTime = os.time()
+    startTimeOfDatabaseTracker = os.time()
     
     while task.wait(1) and not getgenv().Disconnected do
         pcall(function()
             local Data = {
                 [game.Players.LocalPlayer.Name] = {   
                     ["Time Info"] = {
-                        ["Starting Time"] = startTime,
+                        ["Starting Time"] = startTimeOfDatabaseTracker,
                         ["Last Upload"] = os.time()
                     },
     
