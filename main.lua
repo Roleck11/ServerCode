@@ -23,6 +23,7 @@ local RouterClient = require(RS.ClientModules.Core:WaitForChild("RouterClient"):
 local Main_Menu = require(RS.ClientModules.Core.UIManager.Apps.MainMenuApp)
 local Player = game:GetService("Players").LocalPlayer
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local LiveOpsMapSwap = require(game:GetService("ReplicatedStorage").SharedModules.Game.LiveOpsMapSwap)
 
 for i,v in pairs(getconnections(game.Players.LocalPlayer.Idled)) do
   v:Disable()
@@ -994,10 +995,10 @@ end
 function CampingTask()
     -- Camping + Sleeping
     print("Tping to Main Map")
-    GoToMainMap()
-    repeat task.wait(1) until GetMainMap()
     
-    task.wait(10)
+    RS.API:FindFirstChild("LocationAPI/SetLocation"):FireServer("MainMap", Player, LiveOpsMapSwap.get_current_map_type())
+    
+    task.wait(5)
     print("Tping to Camping")
     HRP.CFrame = CFrame.new(-27,20,-1056) -- set 25
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
@@ -1010,23 +1011,14 @@ end
 -- Beach Party Task
 function BeachPartyTask()
     print("Tping to Main Map")
-    GoToMainMap()
-    repeat task.wait(1) until GetMainMap()
+    RS.API:FindFirstChild("LocationAPI/SetLocation"):FireServer("MainMap", Player, LiveOpsMapSwap.get_current_map_type())
     
-    task.wait(10)
+    task.wait(5)
     print("Tping to Beach")
     HRP.CFrame = CFrame.new(-667, 20, -1421) -- set 25
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
     CreateTempPart()
     EquipLastPet()
-    --[[
-    print("Re-equiping last pet")
-    GoToMainMap()
-    task.wait(2)
-    HRP.CFrame = CFrame.new(-667, 25, -1421) -- set 25
-    EquipLastPet()
-    CreateTempPart()]]
-    --game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("HousingAPI/ActivateFurniture"):InvokeServer(game:GetService("Players").LocalPlayer, aPetCrib, "UseBlock", {["cframe"] = CFrame.new(-667, 22, -1421) + Vector3.new(0, 1, 0)}, ClientData.get("pet_char_wrappers")[1].char)
 end
 
 -- Salon Task
@@ -1051,7 +1043,7 @@ function EquipBike()
 end
 
 function RideTask()
-    GoToMainMap()
+    --GoToMainMap()
     CreateTempPart()
     task.wait(5)
     EquipLastPet()
@@ -1076,7 +1068,7 @@ function RideTask()
                 EquipBike()
                 task.wait(0.5)
             end)
-        until not CheckTaskExist("ride") or (not IsInMainMap())
+        until not CheckTaskExist("ride")
         task.wait(1.5)
         game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.W, false, game)
         task.wait(1)
@@ -1088,7 +1080,6 @@ end
 
 -- Walk Task
 function WalkTask()
-    GoToMainMap()
     CreateTempPart()
     task.wait(5)
     EquipLastPet()
@@ -1097,17 +1088,15 @@ function WalkTask()
     oldCFrame = HRP.CFrame + Vector3.new(0, 7, 0)
     HRP.CFrame = oldCFrame
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
-    --Player.Character.Humanoid:MoveTo(HRP.Position + Vector3.new(1000, 0, 0))
     repeat
         local pet = ClientData.get("pet_char_wrappers")[1]["char"]
         pet.HumanoidRootPart.CFrame = oldCFrame + Vector3.new(0, 100, 0)
         HRP.CFrame = oldCFrame + Vector3.new(0, 100, 0)
-        --HRP.CFrame = oldCFrame 
         game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
         task.wait(2)
         CreateTempPart()
-    until not CheckTaskExist("walk") or (not IsInMainMap())
-    --Player.Character.Humanoid:MoveTo(HRP.Position)
+    until not CheckTaskExist("walk")
+
     HRP.CFrame = oldCFrame
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
     CreateTempPart()
@@ -1235,7 +1224,7 @@ spawn(function()
         task.wait()
     end)
     
-    --workspace.HouseInteriors.furniture:Destroy()
+    workspace.HouseInteriors.furniture:Destroy()
     workspace.HouseInteriors.ChildAdded:Connect(function()
         if not workspace.Interiors:FindFirstChild("Hospital") then
             if workspace.HouseInteriors.furniture then
@@ -1713,24 +1702,20 @@ end
 spawn(function()
     while task.wait(0.1) do
         pcall(function()
-        if HRP.CFrame.Y < -250 then
-            print("Safety Net Utilized!")
-            CreateTempPart()
-            HRP.CFrame = CFrame.new(-248.025375, -50, -1746.41724, -0.998434782, -7.92188573e-08, -0.0559278913, -7.50130056e-08, 1, -7.73006334e-08, 0.0559278913, -7.29843208e-08, -0.998434782)
-            CreateTempPart()
-            task.wait(0.5)
-            GoToMainMap()
-            repeat task.wait(1) until HRP.CFrame > -250
-        end
+            if HRP.CFrame.Y < -250 then
+                print("Safety Net Utilized!")
+                CreateTempPart()
+                HRP.CFrame = CFrame.new(-248.025375, -50, -1746.41724, -0.998434782, -7.92188573e-08, -0.0559278913, -7.50130056e-08, 1, -7.73006334e-08, 0.0559278913, -7.29843208e-08, -0.998434782)
+                CreateTempPart()
+                task.wait(0.5)
+                repeat task.wait(1) until HRP.CFrame > -250
+            end
         end)
     end
 end)
 
 print("Creating Temp Part")
 CreateTempPart()
-print("TPing to Main Map")
-GoToMainMap()
-print("TPed to Main Map - First Time")
 task.wait(2)
 
 getgenv().MysteryChoosing = false
@@ -1830,7 +1815,6 @@ while task.wait(1) do
                 end)
             elseif taskName:match("mystery") and not getgenv().MysteryChoosing then
                 print("Choosing Random Mystery Task!")
-                GoToMainMap()
                 getgenv().MysteryChoosing = true
                 spawn(function() 
                     ChooseMysteryTask(taskName)
