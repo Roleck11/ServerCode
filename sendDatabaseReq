@@ -4,8 +4,16 @@ spawn(function()
     if not getgenv().DatabaseClientConfig then
         getgenv().DatabaseClientConfig = {
             ["Debug Prints"] = false,
-            ["API Username"] = "Other"
+            ["API Username"] = "Other",
+            ["Device Name"] = "Main"
         }
+    end
+
+    if not getgenv().Stats then 
+        getgenv().Stats = {
+            Bucks = 0, 
+            Potions = 0
+        } 
     end
     
     print("== hello there.. ==")
@@ -126,6 +134,7 @@ spawn(function()
                         ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
                         ["New Bucks"] = (getgenv().Stats and getgenv().Stats.Bucks) or 0,
                         ["New Potions"] = (getgenv().Stats and getgenv().Stats.Potions) or 0,
+                        ["deviceName"] = DatabaseClientConfig["Device Name"],
                         ["apiUser"] = DatabaseClientConfig["API Username"]
                     },
                 }
@@ -140,5 +149,4 @@ spawn(function()
             task.wait(60)
         end)
     end
-    
 end)
