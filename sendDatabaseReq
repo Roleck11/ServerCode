@@ -18,7 +18,7 @@ spawn(function()
     
     print("== hello there.. ==")
     
-    mainUrl =  "https://amdatabase.vercel.app/"
+    mainUrl =  "http://99.231.109.60:7991/"
     
     local HttpService = game:GetService("HttpService")
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
