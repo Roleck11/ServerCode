@@ -1,3 +1,9 @@
+--[[
+_G.AgingPotionMode = false
+_G.EggHatchMode = true
+EggName = "Garden Egg"
+]]
+
 repeat task.wait(1) until game:IsLoaded()
 
 if not _G.AgingPotionMode and not _G.EggHatchMode then
@@ -32,7 +38,6 @@ end
 for i, v in pairs(debug.getupvalue(RouterClient.init, 7)) do
     v.Name = i
 end
-
 
 
 ---------------- Warn Control ---------------------------------
@@ -194,10 +199,10 @@ if game:GetService("Players").LocalPlayer.PlayerGui.TransitionsApp:FindFirstChil
     game:GetService("Players").LocalPlayer.PlayerGui.TransitionsApp:FindFirstChild("Whiteout").Visible = false 
 end
 --------- Rolox OVerlay Screen
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local Frame_2 = Instance.new("Frame")
-local TextLabel = Instance.new("TextLabel")
+ScreenGui = Instance.new("ScreenGui")
+Frame = Instance.new("Frame")
+Frame_2 = Instance.new("Frame")
+TextLabel = Instance.new("TextLabel")
 
 --Properties:
 
@@ -262,7 +267,7 @@ function SetStatus()
     Potions = tostring((function() local t={} for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)())
     EventCurrency = (ClientData.get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
     Bucks = ClientData.get_data()[Player.Name].money
-
+    
     DifPotion = tonumber(Potions) - StartPotions
     DifBucks = ClientData.get_data()[Player.Name].money - StartBucks
 
@@ -271,13 +276,17 @@ function SetStatus()
     end
     if DifBucks > 0 then Bucks = Bucks .. " (+"..DifBucks..")" end
 
-    if DifPotion > OldDifPots then
-        OldDifPots = DifPotion
-        OldDifPotTime = os.time()
-    else
-        if os.time() - OldDifPotTime >= 5400 then
-            RequestWebhook("Shutting down due to no pots in 1.5 hour")
-            game:Shutdown()
+    if _G.AgingPotionMode then
+        if DifPotion > OldDifPots then
+            OldDifPots = DifPotion
+            OldDifPotTime = os.time()
+        else
+            if (os.time() - OldDifPotTime >= 7200) and (DifPotion > 0) and (DifPotion / math.floor((os.time() - StartTimeAC)/60/60) < 1) and (not _G.AccStuck) then
+                RequestWebhook("Shutting down due to no pots in past 2 hours")
+                game.Players.LocalPlayer:Kick("Account is Stuck")
+                game:Shutdown()
+                _G.AccStuck = true
+            end
         end
     end
 
@@ -301,8 +310,9 @@ SetStatus()
 ScreenGui.Enabled = true
 
 spawn(function()
-    while task.wait(1) do
-        SetStatus()
+    while task.wait(1) and (not getgenv().Disconnected) do
+        successC, errorC = pcall(SetStatus)
+        if not successC then print(errorC) end
     end
 end)
 
@@ -363,6 +373,22 @@ function findPetName(PetID)
     return nil
 end
 
+function findPetID(petName)
+    for _, entry in pairs(require(game:GetService("ReplicatedStorage").ClientDB.Inventory.InventoryDB).pets) do
+        if type(entry) == "table" and string.lower(entry.name) == string.lower(petName) then
+            return entry.id
+        end
+    end
+    return nil
+end
+
+function IsInInv(petUnique)
+    for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do 
+        if v.unique == petUnique then return true end
+    end
+    return false
+end
+
 function RequestWebhook(Desc) 
     local WebhookURL = "https://discord.com/api/webhooks/1241984230943227924/5zgCDHg05pm6n1748sFMCuvBAoelw5-HFxcKRAcFt1PUYsZEBr0GqCmjvkb4r7R_a9Li"
     local Request = http_request or request or HttpPost or syn.request
@@ -414,10 +440,12 @@ function GetMainMap()
 end
 
 function EquipLastPet()
-    RS.API:WaitForChild("ToolAPI/Unequip"):InvokeServer(ClientData.get_data()[game.Players.LocalPlayer.Name].last_equipped_pets[1])
-    task.wait(0.25)
-    RS.API:WaitForChild("ToolAPI/Equip"):InvokeServer(ClientData.get_data()[game.Players.LocalPlayer.Name].last_equipped_pets[1])
-    task.wait(1)
+    if IsInInv(ClientData.get_data()[game.Players.LocalPlayer.Name].last_equipped_pets[1]) then
+        RS.API:WaitForChild("ToolAPI/Unequip"):InvokeServer(ClientData.get_data()[game.Players.LocalPlayer.Name].last_equipped_pets[1])
+        task.wait(0.25)
+        RS.API:WaitForChild("ToolAPI/Equip"):InvokeServer(ClientData.get_data()[game.Players.LocalPlayer.Name].last_equipped_pets[1])
+        task.wait(1)
+    end
 end
 
 function CheckExistwID(id)
@@ -434,7 +462,7 @@ end
 function GetEggAmount()
     EggsInAcc = {}
     for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-        if v.id == EggName then
+        if v.id == findPetID(EggName) then
             table.insert(EggsInAcc, i)
         end
     end
@@ -444,20 +472,25 @@ end
 function GetEgg()
     print("Get Egg Function Called")
     if GetEggAmount() == 0 then
-        RS.API["ShopAPI/BuyItem"]:InvokeServer("pets", EggName, {})
+        RS.API["ShopAPI/BuyItem"]:InvokeServer("pets", findPetID(EggName), {})
         for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-            if v.id == EggName then        
+            if v.id == findPetID(EggName) then        
                 return i
             end
         end
     elseif GetEggAmount() > 0 then
         for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-            if v.id == EggName then        
+            if v.id == findPetID(EggName) then        
                 return i
             end
         end
     end
-end             
+end   
+
+function EquipEgg()
+    game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("ToolAPI/Unequip"):InvokeServer(GetEgg())
+    game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("ToolAPI/Equip"):InvokeServer(GetEgg())
+end
 
 if _G.AgingPotionMode then
     print("== Selected Mode : Aging Potion ==")
@@ -517,7 +550,7 @@ elseif _G.EggHatchMode then
         if Bucks > 750 then
             RS.API["ShopAPI/BuyItem"]:InvokeServer("pets", EggName, {})
             for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-                if v.id == EggName then        
+                if v.id == findPetID(EggName) then        
                     table.insert(EggsInAcc, i)
                 end
             end      
@@ -526,11 +559,11 @@ elseif _G.EggHatchMode then
                 if v.id ~= "practice_dog" then    
                     table.insert(Pets, i)
                 end
-            end      
+            end
+            MainPet = RoT(Pets)
+            _G.EggHatchMode = false
+            _G.AgingPotionMode = true    
         end
-        MainPet = RoT(Pets)
-        _G.EggHatchMode = false
-        _G.AgingPotionMode = true  
     end  
 end
 
@@ -604,46 +637,27 @@ if _G.AgingPotionMode then
 end
 
 if _G.EggHatchMode then
-    function EquipEgg()
-        game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("ToolAPI/Unequip"):InvokeServer(GetEgg())
-        game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("ToolAPI/Equip"):InvokeServer(GetEgg())
-    end
-
     EquipEgg()
     wait(2)
 
     print("== Egg Hatching Started ==")
     spawn(function()
-        while true and wait(5) do
-            PetEquippedWithID = ClientData.get("pet_char_wrappers")[1].pet_id
-            if PetEquippedWithID ~= EggName then 
-                EquipEgg()
+        while task.wait(5) do
+            if ClientData.get("pet_char_wrappers")[1] then
+                if ClientData.get("pet_char_wrappers")[1].pet_id ~= findPetID(EggName) then 
+                    EquipEgg()
+                end
             end
         end
     end)
 end
 
-------------- Launch Auto-Equip if Detect New Pet in INV --------
-task.spawn(function()
-    while task.wait(1) do 
-        for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-            if not CheckInv(i) then 
-                table.insert(inv, i)
-                if _G.AgingPotionMode then
-                    EquipMainPet()
-                end
-                RequestWebhook(findPetName(v.id))  --- Webhook              
-            end 
-        end
-    end
-end)
 ------------- FURNITURE STUFF ----------------
 function GetFurniture(name)
-    for _,v in pairs(workspace.HouseInteriors.furniture:GetChildren()) do 
-        if v:IsA("Folder") and v:FindFirstChildOfClass("Model") then 
-           if tostring(string.lower(v:FindFirstChildOfClass("Model").Name)):match(string.lower(name)) then 
-              return v:FindFirstChildOfClass("Model"):GetAttribute("furniture_unique")
-           end
+    name = string.lower(name)
+    for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].house_interior.furniture) do 
+        if v.id == name then 
+            return i
         end
     end
 end
@@ -665,6 +679,7 @@ end
 ---------------------- Lure System ------------------
 print("== Lure System Activated ==")
 _G.BaitID = "lures_2023_campfire_cookies"
+_G.LureUniqueID = GetFurniture("lures_2023_normal_lure")
 
 function BuyLureBox()
     local args5 = {
@@ -678,10 +693,9 @@ function BuyLureBox()
         }
     }
     game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("HousingAPI/BuyFurnitures"):InvokeServer(unpack(args5))
-    _G.fNumber = GetFurniture("Lures2023NormalLure")
+    task.wait(1)
+    _G.LureUniqueID = GetFurniture("lures_2023_normal_lure")
 end
-
-_G.fNumber = GetFurniture("Lures2023NormalLure")
 
 function LureFeedBeta()
     for i, v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food) do
@@ -691,12 +705,12 @@ function LureFeedBeta()
     end
     local args = {
         [1] = game.Players.LocalPlayer,
-        [2] = _G.fNumber,
+        [2] = _G.LureUniqueID,
         [3] = "UseBlock",
         [4] = {
             ["bait_unique"] = tostring(cookieid)
         },
-        [5] = workspace:WaitForChild("PlayerCharacters"):WaitForChild(game.Players.LocalPlayer.Name) 
+        [5] = game.Players.LocalPlayer.Character 
     }
     game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("HousingAPI/ActivateFurniture"):InvokeServer(unpack(args))
 end
@@ -704,47 +718,81 @@ end
 function ClaimLureBeta()
     local args = {
         [1] = game:GetService("Players").LocalPlayer,
-        [2] = _G.fNumber,
+        [2] = _G.LureUniqueID,
         [3] = "UseBlock",
         [4] = true,
-        [5] = workspace:WaitForChild("PlayerCharacters"):WaitForChild(game.Players.LocalPlayer.Name)
+        [5] = game.Players.LocalPlayer.Character
     }
     game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("HousingAPI/ActivateFurniture"):InvokeServer(unpack(args))
     LureFeedBeta()
+
+    -- Send Webhook for any New Pets
+    for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
+        if not CheckInv(i) then 
+            table.insert(inv, i)
+            RequestWebhook(findPetName(v.id))  --- Webhook              
+        end 
+    end
 end
 
 spawn(function()
-    if _G.fNumber == nil then
+    if _G.LureUniqueID == nil and ClientData.get("money") >= 750 then
         print("Buying Lure Box")
         BuyLureBox()
+        task.wait(1)
     end
-    while task.wait(15) do
-        pcall(ClaimLureBeta)
+    if _G.LureUniqueID then
+        while task.wait(1) do
+            pcall(function()
+                local PetInventory = ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets
+                for i, v in pairs(PetInventory) do
+                    if v.id == findPetID("Blazing Lion") then
+                        ScreenGui.Frame.BackgroundColor3 = Color3.fromRGB(255, 165, 0)
+                        break
+                    end
+                end
+
+                local LureInBox = ClientData.get_data()[Player.Name].house_interior.furniture[_G.LureUniqueID].lure
+                if LureInBox then
+                    if LureInBox.finished then
+                        print("Received", LureInBox.reward.kind)
+                        ClaimLureBeta()
+                    else
+                        LureEndTime = LureInBox.lure_start_timestamp + 14400
+                        print("Waiting", math.floor(LureEndTime - os.time()), "Seconds for Lure!")
+                        task.wait(LureEndTime - os.time())
+                    end
+                else
+                    print("Lure Box is Empty, inserting Bait into Lure Box!")
+                    LureFeedBeta()
+                end
+            end)
+        end
     end
 end)
 
 ---------------------- LOCATION/FURNITURE STUFF  --------------------
 
-getgenv().aPetCrib = GetFurniture("Crib") or GetFurniture("PetBed")
-getgenv().aPetShower = GetFurniture("Shower") or GetFurniture("Bath")
-getgenv().aPiano = GetFurniture("Piano")
+getgenv().aPetCrib = GetFurniture("basiccrib") or GetFurniture("PetBed")
+getgenv().aPetShower = GetFurniture("stylishshower") or GetFurniture("Bath")
+getgenv().aPiano = GetFurniture("piano")
 getgenv().aToilet = GetFurniture("Toilet")
 
 if not aPetCrib then
     buyFurniture("basiccrib")
-    print("------ Notification ------ Bought Crib")
-    getgenv().aPetCrib = GetFurniture("Crib") or GetFurniture("PetBed")
+    print("---- Notification ---- Bought Crib")
+    getgenv().aPetCrib = GetFurniture("basiccrib") or GetFurniture("PetBed")
 end
 
 if not aPetShower then
     buyFurniture("stylishshower")
-    print("------ Notification ------ Bought Shower")
-    getgenv().aPetShower = GetFurniture("Shower") or GetFurniture("Bath")
+    print("---- Notification ---- Bought Shower")
+    getgenv().aPetShower = GetFurniture("stylishshower") or GetFurniture("Bath")
 end
 
 if not aPiano and tonumber(ClientData.get("money")) > 100 then
     buyFurniture("piano")
-    print("------ Notification ------ Bought Piano")
+    print("---- Notification ---- Bought Piano")
     getgenv().aPiano = GetFurniture("Piano")
 end
 
@@ -842,6 +890,14 @@ function hasStroller()
             return v.unique
         end
     end
+end
+
+function hasGoldenApple()
+    for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food) do
+        if v.id == "healing_apple" then
+            return v.unique
+        end
+    end   
 end
 
 function isDoctorLoaded()
@@ -998,18 +1054,11 @@ end
 
 -- Sick / Hospital Task
 function SickTask()
-    CreateTempPart()
-    RS.API["LocationAPI/SetLocation"]:FireServer("Hospital")
     EquipLastPet()
-    if not isDoctorLoaded() then print(`🩹⚠️ Doctor didnt load 🩹⚠️`) return end
-    getDoctorId()
-    local args = {
-        [1] = doctorId,
-        [2] = "UseBlock",
-        [3] = "Yes",
-        [4] = game:GetService("Players").LocalPlayer.Character
-    }  
-    RS.API:FindFirstChild("HousingAPI/ActivateInteriorFurniture"):InvokeServer(unpack(args))
+    goldenAppleID = hasGoldenApple()
+    if goldenAppleID then
+        RS:FindFirstChild("PetAPI/ConsumeFoodItem",true):FireServer(goldenAppleID, ClientData.get("pet_char_wrappers")[1]["pet_unique"])
+    end
 end
 
 -- Pizza Party Task
@@ -1035,8 +1084,9 @@ function CampingTask()
     print("Tping to Main Map")
     
     RS.API:FindFirstChild("LocationAPI/SetLocation"):FireServer("MainMap", Player, LiveOpsMapSwap.get_current_map_type())
-    
     task.wait(5)
+    if workspace:FindFirstChildWhichIsA("Terrain") then workspace.Terrain:Clear() end
+
     print("Tping to Camping")
     HRP.CFrame = CFrame.new(-27,20,-1056) -- set 25
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
@@ -1050,8 +1100,9 @@ end
 function BeachPartyTask()
     print("Tping to Main Map")
     RS.API:FindFirstChild("LocationAPI/SetLocation"):FireServer("MainMap", Player, LiveOpsMapSwap.get_current_map_type())
-    
     task.wait(5)
+    if workspace:FindFirstChildWhichIsA("Terrain") then workspace.Terrain:Clear() end
+
     print("Tping to Beach")
     HRP.CFrame = CFrame.new(-667, 20, -1421) -- set 25
     game.Players.LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Landed)
@@ -1593,7 +1644,7 @@ spawn(function()
         for taskName, v in pairs(GetBabyTasks()) do
             repeat task.wait(1) until not getgenv().TPinProgress
             startTick = tick()
-            if not CheckTaskExist("walk") then
+            if (not CheckTaskExist("walk")) and (not CheckTaskExist("ride")) then
                 if taskName == "dirty" and not CheckTaskExist("dirty") then
                     spawn(function() task.wait(30) 
                         RS.API:WaitForChild("AdoptAPI/BabyJump"):FireServer(Player.Character)
@@ -1741,6 +1792,16 @@ spawn(function()
     end
 end)
 
+-- Get 30 Golden Apples
+local args = {
+    [1] = "food",
+    [2] = "healing_apple",
+    [3] = {
+        ["buy_count"] = 30
+    }
+}
+game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("ShopAPI/BuyItem"):InvokeServer(unpack(args))
+
 print("Creating Temp Part")
 CreateTempPart()
 task.wait(2)
@@ -1817,7 +1878,7 @@ while task.wait(1) do
                     spawn(function()
                         pcall(ToiletTask)
                     end)                    
-                elseif taskName == "sick" then
+                elseif taskName == "sick" and hasGoldenApple() then
                     print("Sick task appeared.")
                     _G.Status = "Completing Sick Task..."
                     spawn(function()
