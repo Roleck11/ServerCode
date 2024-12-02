@@ -983,7 +983,7 @@ function HungryTask()
         if v.id == "icecream" then
             RS.API["ToolAPI/Equip"]:InvokeServer(v.unique, { ["use_sound_delay"] = true })
             task.wait(1)
-            RS:WaitForChild("PetAPI/ConsumeFoodItem"):FireServer(v.unique, ClientData.get("pet_char_wrappers")[1]["pet_unique"])
+            RS.API:WaitForChild("PetAPI/ConsumeFoodItem"):FireServer(v.unique, ClientData.get("pet_char_wrappers")[1]["pet_unique"])
             break
         end
     end
