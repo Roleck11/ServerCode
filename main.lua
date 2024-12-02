@@ -647,6 +647,7 @@ if _G.AgingPotionMode then
                 end
             end                
         end
+        task.wait(0.5)
     end
 
     EquipMainPet(MainPet)
@@ -673,6 +674,9 @@ if _G.AgingPotionMode then
                     if PetName:match("Egg") then
                         print("Egg Hatched, changing Main Pet..")
                         MainPet = ClientData.get("pet_char_wrappers")[1].pet_unique
+                        selectedPetID = ClientData.get("pet_char_wrappers")[1].pet_unique
+                    else
+                        EquipMainPet(MainPet)
                     end
                 elseif not ClientData.get("pet_char_wrappers")[1] then
                     EquipMainPet(MainPet)
@@ -821,9 +825,9 @@ spawn(function()
                     if LureInBox.finished then
                         local successA, errorA = pcall(function()
                             if LureInBox.reward.category == "currency" then
-                                SendLureNotif(string.format("%d %s", LureInBox.reward.amount, string.upper(LureInBox.reward.kind)))
+                                SendLureNotif(string.format("%d %s", (LureInBox.reward.amount or 1), string.upper(LureInBox.reward.kind)))
                             else
-                                SendLureNotif(string.format("%d %s", LureInBox.reward.amount, findItemName(LureInBox.reward.kind, LureInBox.reward.category)))
+                                SendLureNotif(string.format("%d %s", (LureInBox.reward.amount or 1), findItemName(LureInBox.reward.kind, LureInBox.reward.category)))
                             end
                         end)
                         if not successA then print(errorA) end
@@ -1855,6 +1859,21 @@ task.wait(2)
 getgenv().MysteryChoosing = false
 
 while task.wait(1) do
+    pcall(function()
+        if ClientData.get("pet_char_wrappers") and ClientData.get("pet_char_wrappers")[1] and ClientData.get("pet_char_wrappers")[1].pet_unique ~= selectedPetID then
+            print("Other Pet Found: ", ClientData.get("pet_char_wrappers")[1].char, PetName)
+            if PetName:match("Egg") then
+                print("Egg Hatched, changing Main Pet..")
+                MainPet = ClientData.get("pet_char_wrappers")[1].pet_unique
+                selectedPetID = ClientData.get("pet_char_wrappers")[1].pet_unique
+            else
+                EquipMainPet(MainPet)
+            end
+        elseif not ClientData.get("pet_char_wrappers")[1] then
+            EquipMainPet(MainPet)
+        end
+    end)
+
     pcall(function()
         for taskName, v in pairs(GetPetTasks()) do
             local success, errorMessage = pcall(function()
