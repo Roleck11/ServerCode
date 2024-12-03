@@ -294,7 +294,7 @@ function SetStatus()
         end
     end
 
-    getgenv().Stats = {
+    getgenv().StatsAM = {
         Bucks = DifBucks,
         Potions = DifPotion
     }
@@ -421,8 +421,15 @@ function RequestWebhook(Desc)
         ["embeds"] = {
             {
                 ["title"] = game.Players.LocalPlayer.Name,
-                ["description"] = ("Pet Hatched: __**" ..Desc.. "**__"),
+                ["description"] = Desc .. "\nCurrent Task: " .. _G.Status,
                 ["color"] = tonumber(0x7269da),
+                ["fields"] = {
+                    {
+                        ["name"] = "Stats",
+                        ["value"] = "Online: " .. disp_time(os.time() - StartTimeAC) .. "\nPotions: " .. tostring(getgenv().StatsAM.Potions) .. "\nBucks: ".. tostring(getgenv().StatsAM.Bucks),
+                        ["inline"] = true -- Optional, set to true for side-by-side fields
+                    }
+                }
             }
         }
     }
@@ -775,14 +782,6 @@ function ClaimLureBeta()
     }
     game:GetService("ReplicatedStorage"):WaitForChild("API"):WaitForChild("HousingAPI/ActivateFurniture"):InvokeServer(unpack(args))
     LureFeedBeta()
-
-    -- Send Webhook for any New Pets
-    for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.pets) do
-        if not CheckInv(i) then 
-            table.insert(inv, i)
-            RequestWebhook(findPetName(v.id))  --- Webhook              
-        end 
-    end
 end
 
 spawn(function()
