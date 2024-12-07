@@ -139,11 +139,13 @@ spawn(function()
     startTimeOfDatabaseTracker = os.time()
     dt_Pots = (tonumber((function() local t={} for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()) or 0)
     dt_Bucks = ClientData.get_data()[Player.Name].money
+    dt_ECurrency = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
     
     while task.wait(1) and not getgenv().Disconnected do
         pcall(function()
             local cPots = (tonumber((function() local t={} for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()) or 0) - dt_Pots
             local cBucks = ClientData.get_data()[Player.Name].money - dt_Bucks
+            local cECurrency = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0) - dt_ECurrency
 
             local Data = {
                 [game.Players.LocalPlayer.Name] = {   
@@ -158,6 +160,7 @@ spawn(function()
                         ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
                         ["New Bucks"] = (cBucks) or 0,
                         ["New Potions"] = (cPots) or 0,
+                        ["New Event Currency"] = (cECurrency) or 0
                         ["deviceName"] = DatabaseClientConfig["Device Name"],
                         ["apiUser"] = DatabaseClientConfig["API Username"]
                     },
