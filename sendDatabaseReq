@@ -160,7 +160,7 @@ spawn(function()
                         ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
                         ["New Bucks"] = (cBucks) or 0,
                         ["New Potions"] = (cPots) or 0,
-                        ["New Event Currency"] = (cECurrency) or 0
+                        ["New Event Currency"] = (cECurrency) or 0,
                         ["deviceName"] = DatabaseClientConfig["Device Name"],
                         ["apiUser"] = DatabaseClientConfig["API Username"]
                     },
