@@ -957,6 +957,17 @@ end
 
 ---------------- Function Tasks ------------------
 
+function farmGingerbreads()
+    for _, v in RS.Resources.IceSkating.GingerbreadMarkers:GetChildren() do
+        if v:IsA("BasePart") then
+            RS.API:FindFirstChild("WinterEventAPI/PickUpGingerbread"):InvokeServer(v.Name)
+            task.wait()
+        end
+    end
+    task.wait(1)
+    RS.API:FindFirstChild("WinterEventAPI/RedeemPendingGingerbread"):FireServer()
+end
+
 function hasStroller()
     for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.strollers) do
         if v.id == "stroller-default" then
@@ -1827,6 +1838,13 @@ spawn(function()
                 repeat task.wait(1) until HRP.CFrame > -250
             end
         end)
+    end
+end)
+
+spawn(function()
+    while task.wait(1) do
+        farmGingerbreads()
+        task.wait(200)
     end
 end)
 
