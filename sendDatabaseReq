@@ -136,10 +136,10 @@ spawn(function()
         getgenv().Disconnected = true
     end)
     
-    startTimeOfDatabaseTracker = os.time()
-    dt_Pots = (tonumber((function() local t={} for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()) or 0)
-    dt_Bucks = ClientData.get_data()[Player.Name].money
-    dt_ECurrency = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
+    local startTimeOfDatabaseTracker = os.time()
+    local dt_Pots = (tonumber((function() local t={} for i,v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()) or 0)
+    local dt_Bucks = ClientData.get_data()[Player.Name].money
+    local dt_ECurrency = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0)
     
     while task.wait(1) and not getgenv().Disconnected do
         pcall(function()
@@ -155,6 +155,7 @@ spawn(function()
                     },
     
                     ["Player Info"] = {
+                        ["Pets"] = getInventoryInfo("pets"),
                         ["Aging Potions"] = ((function() local t={} for i,v in pairs(require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name].inventory.food)do if v.id=="pet_age_potion"then table.insert(t,i)end end return #t end)()),
                         ["Bucks"] = (ClientData.get_data()[Player.Name].money or 0),
                         ["Event Currency"] = (require(game.ReplicatedStorage.ClientModules.Core.ClientData).get_data()[game.Players.LocalPlayer.Name][require(game:GetService("ReplicatedStorage").SharedModules.SharedDB.AltCurrencyData)["name"]] or 0),
