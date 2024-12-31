@@ -55,12 +55,20 @@ spawn(function()
         end
     end
     
+    function CheckInvisiblePet(petID)
+        for _, entry in pairs(require(game:GetService("ReplicatedStorage").ClientDB.Inventory.InventoryDB).pets) do
+            if type(entry) == "table" and string.lower(entry.id) == string.lower(petID) then
+                return entry.temporary
+            end
+        end
+    end
+
     function getInventoryInfo(tab)
         local petsTable = {}
         local allInventory = {}
     
         for _, v in pairs(ClientData.get_data()[game.Players.LocalPlayer.Name].inventory[tab]) do
-            if v.id == "practice_dog" then continue end
+            if v.id == "practice_dog" or CheckInvisiblePet(v.id) then continue end
             local isNeon = v.properties and v.properties.neon
             local isMega = v.properties and v.properties.mega_neon
             local petKey = isNeon and ("neon_" .. v.id) or isMega and ("mega_" .. v.id) or v.id
